@@ -1,0 +1,627 @@
+La visualización nos ayuda a entender de manera más intuitiva la información. En muchas ocasiones
+los datos que utilizamos no tienen la forma adecuada para generar las gráficas deseadas. En
+ocasiones, necesitamos crear nuevas variables, generar agregados, renombrar variables, reordenar
+o reclasificar observaciones.
+En este apartado aprenderemos a realizar estas operaciones con la finalidad de que podamos
+transformar una base de datos según nuestras necesidades de información, para ello haremos
+uso de la paquetería dplyr.
+```{r}
+install.packages("ggplot2")
+install.packages("readxl")
+install.packages("tidyr")
+install.packages("dplyr")
+library(ggplot2)
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(csvread)
+```
+```{r}
+setwd("~/CURSO PYTHON Y R/CursoIntroR")
+library (tidyverse)
+options(scipen=999) # desactiva notación científica
+enhog <- read.csv2("hogares_enigh.csv",sep=",")
+  enhog
+```
+Funciones básicas de dplyr
+La paquetería (o librería) dplyr tiene cinco funciones principales:
+• filter(): filtrar observaciones (filas)
+• arrange(): ordenar observaciones
+• select(); filtrar variables (columnas)
+• mutate(): crear nuevas variables usando un data frame
+• summarize(): comprimir muchos valores en un solo estadístico
+
+
+Filtrar datos
+En relación a la función filter() permite hacer un subconjunto de observaciones basado en los valores
+de interés. La función permite utilizar una o más condiciones. De esta forma el resultado que
+obtendremos serán aquellas observaciones donde se cumplan las restricciones que coloquemos.
+Por ejemplo, podemos filtrar los hogares por el tipo de la clase de hogar (clase_hog) según su parentesco.
+Filtremos los hogares de tipo nuclear, cuya clasificación es 2, esto se obtiene haciendo clase_
+hog==2.
+
+
+```{r}
+hogares_uniper = filter(enhog,clase_hog==2)
+```
+
+
+```{r}
+hogares_uniper_fem =filter(enhog,clase_hog==2 ,sexo_jefe==2)
+```
+Hogares nucleares y unipersonales con jefatura femenina
+
+```{r}
+hogares_jfem <- filter(enhog, (clase_hog==1 | clase_hog==2) , sexo_jefe==2)
+
+```
+Ordernar observaciones usando arrange()
+
+
+```{r}
+# arrange(enhog, Apellido_parterno, Apellido_materno, Nombre)
+# Probemos esta indicación ordenando la base enigh según la edad del jefe del hogar:
+arrange(enhog, edad_jefe)
+```
+
+```{r}
+#Ahora si deseamos ordenar primero por el sexo del jefe del hogar y después la edad:
+tempOrd <- arrange(enhog, sexo_jefe, edad_jefe)
+
+# arraen orden descendente ---> arrange(enigh, sexo_jefe, desc(edad_jefe))
+```
+
+Filtrar variables con select()
+En muchas ocasiones encontraremos que nuestra base de datos contiene muchas variables, más
+de las requerimos para nuestro análisis. Por ejemplo, la base con la que estamos trabajando contiene
+26 variables. Supongamos que deseamos explorar de manera rápida algunas de ellas, para
+ello podemos utilizar la función select() que permite separar o filtrar variables por su nombre.
+Por ejemplo, en la encuesta enigh, los ingresos y gastos están desagregados en diferentes niveles,
+pero no nos interesa, por ahora, explorar a tal nivel de desagregación, por lo que solo queremos
+explorar los datos generales del hogar y el total de ingreso y gasto:
+Para explorar los nombres de las variables utilizamos la siguiente instrucción:
+
+
+
+```{r}
+colnames(enhog)
+```
+
+```{r}
+enhog_corto <- select(enhog, folioviv, foliohog,
+ing_cor,gasto_mon, tot_integ,
+ubica_geo, sexo_jefe, clase_hog,edad_jefe)
+# Entre dos columnas y una aparte
+enhog_corto2 <- select(enhog, folioviv:sexo_jefe, gasto_mon)
+
+```
+
+También podemos usar el símbolo “:” para indicar exclusión, por ejemplo, excluir las variables desde
+“folioviv” hasta “percep_ing”, usamos la siguiente instrucción:
+select(enigh, -(folioviv:percep_ing))
+
+En este caso hemos utilizado el signo - para indicar que no deseamos esas variables en la base
+filtrada.
+Existen algunas otras funcionen que podemos utilizar junto con select():
+• starts_with(“abc”) selecciona las variables que comienzan con “abc”
+• ends_with(“xyz”) selecciona las variables que terminan con “xyz”
+• contains(“ijk”) selecciona las variable que en su nombre contienen “ijk”
+• matches(“(.)\1”) selecciona las variables que corresponden a una expresión regular
+• num_range(“x”, 1:3) selecciona las variables llamadas x1, x2 y x3
+
+```{r}
+select(enhog, starts_with("fol"))
+```
+```{r}
+select(enhog, ends_with("s"))
+```
+
+
+Generar nuevas variables con mutate()
+En muchas ocasiones tendremos que generar nuevas variables, mutate() es la función que nos
+ayudará para esta tarea. Esta función añadirá nuevas columnas a un conjunto de datos existente.
+Antes de continuar limpiemos nuestro ambiente de trabajo, conservemos solo los data frame enigh
+y enigh_corto.
+
+```{r}
+remove (hogares_uniper, hogares_uniper_jfem, hogares_jfem, enigh_corto2,tempOrd,denunciasddc,)
+```
+
+```{r}
+remove(hogares_uniper_fem,enhog_corto2)
+```
+
+
+
+Ahora generaremos tres variables sobre el data frame enigh_corto: el logaritmo natural del ingreso
+corriente, el logaritmo natural del gasto monetario y el gasto monetario como porcentaje del
+ingreso:
+
+
+```{r}
+enhog_corto <- mutate(enhog_corto, lingreso=log(as.numeric(ing_cor)),
+  lgasto=log(as.numeric(gasto_mon)),
+  gasto_porcentaje=(as.numeric(gasto_mon)/as.numeric(ing_cor)*100 )
+```
+```{r}
+enhog_corto <- mutate(enhog_corto, lingreso=log(as.numeric(ing_cor)),
+lgasto=log(as.numeric(gasto_mon)),
+gasto_porcentaje=(as.numeric(gasto_mon)/as.numeric(ing_cor)*100 ))
+```
+
+
+Veamos otro ejemplo. Ahora incluyamos también el ingreso per cápita del hogar, para ello debemos
+dividir el ingreso del hogar entre el número de habitantes del hogar, esto para tener un mejor
+indicador del nivel de ingreso del hogar:
+
+
+
+```{r}
+enhog_corto <- mutate(enhog_corto, ingreso_capita=as.numeric(ing_cor)/as.numeric(tot_integ) )
+```
+
+
+Para sacar un substring de un campo
+
+
+```{r}
+enhog_corto <- mutate(enhog_corto, cve_ent=substr(ubica_geo,1,2) )
+```
+
+Función summarise()
+La función summarize() es útil para generar un resumen de estadísticos (media, mediana, varianza,
+etc.) de una base de datos.
+
+```{r}
+summarise(enhog_corto, mean(as.numeric(ing_cor)), mean(as.numeric(gasto_mon)))
+summarise(enhog_corto, median(ing_cor), median(gasto_mon))
+summarise(enhog_corto, var(ing_cor), var(gasto_mon))
+```
+
+En el primer ejemplo hemos calculado la media (mean), de cada una de las variables indicadas. En
+el segundo la mediana (median) y en el tercer caso la varianza (var)
+
+
+Sin embargo, esta función tiene mayor utilidad cuando la combinamos con la opción group_by(),
+de esta manera obtenemos un grupo de estadísticos para diferentes grupos de observación. Por
+ejemplo, veamos el promedio de ingreso y gasto según el sexo del jefe del hogar.
+
+```{r}
+sexo <- group_by(enhog_corto, sexo_jefe)
+summarise ( sexo, mean(as.numeric(ing_cor)), mean(as.numeric(gasto_mon)))
+
+```
+
+Observa que primero se ha efectuado la agrupación por sexo, después se ha creado la media cada grupo.
+
+```{r}
+summarise ( group_by(enhog_corto, sexo_jefe),
+mean(as.numeric(ing_cor)), mean(as.numeric(gasto_mon)))
+
+```
+
+```{r}
+class(sexo)
+
+```
+
+```{r}
+dim(sexo)
+```
+
+Calculemos ahora las diferencias por clase de hogar y sexo del jefe del hogar:
+
+```{r}
+clases_hogar <- group_by(enhog_corto, sexo_jefe, clase_hog)
+summarise ( clases_hogar, mean(as.numeric(ing_cor)), mean(as.numeric(gasto_mon)), .groups = 'drop')
+```
+
+```{r}
+clases_hogar
+
+```
+```{r}
+remove(enigh_corto)
+```
+
+Ahora podemos ver los promedios de ingreso y gasto por entidad federativa.
+
+```{r}
+entidades <- group_by(enhog_corto, cve_ent)
+summarise ( entidades, mean(as.numeric(ing_cor)), mean(as.numeric(gasto_mon)),.groups = 'drop')
+```
+
+
+¿Existen una relación entre el ingreso y la edad del jefe del hogar? exploremos un poco más los datos.
+Existen hogares que declaran cero ingresos o se rehusaron a dar información, es mejor filtrar
+estos hogares. Lo mismo debemos hacer con el gasto.
+
+
+```{r}
+enhog_corto_no_ceros <- filter(enhog_corto, ing_cor>0, gasto_mon>0 )
+edades <- group_by(enhog_corto_no_ceros, edad_jefe)
+ingreso_edad <- summarise ( edades, ingreso=mean(ingreso_capita), hogares=n(), .groups = 'drop' )
+edades
+ingreso_edad
+```
+
+```{r}
+ggplot(data=ingreso_edad, mapping = aes(x=edad_jefe, y=ingreso)) +
+geom_point(aes(size = hogares), alpha = 1/3) + geom_smooth(se=FALSE)
+```
+
+
+Operador pipe
+Repasemos un poco las instrucciones para generar la gráfica que relaciona la edad del jefe del
+hogar con el ingreso.
+1. Filtrar valores no creíbles como los ceros en las variables de ingreso y gasto
+2. Genera los grupos de edad
+3. Genera un nuevo data frame con el promedio de ingresos per cápita por edad y el número
+de hogares
+4. Generar la gráfica
+
+Realicemos el mismo ejercicio, pero ahora con el uso del operador pipe %>%, el cual nos ayuda a concatenar
+o juntar una serie de operaciones o manipulaciones a un objeto en una misma instrucción:
+
+
+```{r}
+ingreso_edad2 <- filter(enhog_corto, ing_cor>0, gasto_mon>0 ) %>%
+  group_by(edad_jefe) %>%
+  summarise (ingreso=mean(ingreso_capita), hogares=n(),.groups = 'drop' )
+ggplot(data=ingreso_edad2, mapping = aes(x=edad_jefe, y=ingreso)) +
+geom_point(aes(size = hogares), alpha = 1/3) + geom_smooth(se=FALSE)
+
+```
+Con el uso del operador pipe podemos realizar operaciones de forma anidada sin necesidad de
+generar data frames intermedias y hacer el código más amigable para la lectura.
+Veamos otro ejemplo, supongamos que ahora deseamos analizar el ingreso per cápita de los hogares
+por entidad federativa y por clase hogar:
+
+```{r}
+filter(enhog_corto, ing_cor>0, gasto_mon>0 ) %>%
+group_by(cve_ent, clase_hog) %>%
+summarise (ingreso=mean(ingreso_capita), hogares=n(), .groups = 'drop' )
+```
+
+
+```{r}
+ingreso_edad
+```
+
+
+En el siguiente ejemplo estamos calculando diferentes estadisticas del ingreso corriente para cada estado.
+
+
+```{r}
+tabla_entidad <- filter(enhog_corto, ing_cor>0, gasto_mon>0 ) %>% 
+  group_by(cve_ent) %>%
+  summarise (ingreso_promedio=mean(as.numeric(ing_cor)),ingreso_sd=sd(as.numeric(ing_cor)),ingreso_p50=median(as.numeric(ing_cor)),ingreso_min=min(as.numeric(ing_cor)),ingreso_max=max(as.numeric(ing_cor)), .groups = 'drop')
+tabla_entidad
+```
+
+#Exploración de datos
+Ya que hemos aprendido a manipular datos, nos enfocaremos ahora a su exploración, para ello a
+lo largo de esta sesión, presentaremos algunas definiciones propias de la estadística únicamente
+con la finalidad de que sea claro el proceso de exploración. Para mayores detalles en temas estadísticos
+te recomendamos consultar cual libro de estadística.
+
+Palabras clave
+El objetivo del análisis exploratorio de los datos es desarrollar un entendimiento de nuestros datos.
+La mejor manera de hacer esto es usar preguntas que sirvan de guía para nuestra investigación.
+Al realizar preguntas, estas centran nuestra atención a una parte específica de nuestro conjunto
+de datos y nos ayudan a decidir que gráficas, modelos o transformaciones debemos hacer.
+Es difícil realizar preguntas reveladoras o que detonen un punto central de una investigación si
+precisamente no conocemos a detalle nuestros datos. Sin embargo, la idea de este proceso es
+hacer preguntas sencillas, las cuales poco a poco relevarán nuevos aspectos de nuestros datos, lo
+cual nos permite generar nuevas preguntas.
+Si bien, no hay una regla o guía escrita para comenzar nuestro análisis, un punto de partida es a
+través de dos preguntas:
+• ¿Qué tipo de variación ocurre dentro de las variables?
+• ¿Qué tipo de co-variación ocurre entre las variables?
+
+Variación
+La variación es la tendencia de los valores de una variable a cambiar de medida en medida. Cuando
+medimos una variable continua dos veces, como la temperatura, podemos obtener dos resultados
+distintos, cada vez que realizamos una medida obtendremos un pequeño margen de error
+que varia entre cada medición.
+
+
+Distribución de los datos
+Comencemos nuestro análisis realizando una distribución del total de integrantes del hogar. En
+este caso nuestra variable es discreta (una variable es discreta cuando puede tomar únicamente
+valores correspondientes a los números naturales, 1,2 ,3, etc). Para examinar esta distribución
+usemos una gráfica de barras:
+
+
+```{r}
+ggplot(data=enhog) +
+geom_bar(mapping=aes(x=tot_integ))
+```
+
+```{r}
+enhog %>%
+  count(tot_integ)
+
+```
+
+```{r}
+options(scipen=999)
+ggplot(data=enhog)+
+geom_histogram(mapping = aes( x= as.numeric(ing_cor)), binwidth = 1000)
+```
+Ahora probemos excluyendo los hogares con ingresos mayores a 200,000 pesos al trimestre:
+
+```{r}
+ingresos<-enhog %>%
+filter(as.numeric(ing_cor)<200000)
+ggplot(data=ingresos)+
+geom_histogram(mapping = aes( x= as.numeric(ing_cor)), binwidth = 1000)
+```
+
+Reemplazamos codigos por nombres de las variables categóricas
+
+
+```{r}
+# Reemplazamos la variable de tipo de hogar
+ingresos$clase_hog <- gsub(1, "Unipersonal", ingresos$clase_hog)
+ingresos$clase_hog <- gsub(2, "Nuclear", ingresos$clase_hog)
+ingresos$clase_hog <- gsub(3, "Ampliado", ingresos$clase_hog)
+ingresos$clase_hog <- gsub(4, "Compuesto", ingresos$clase_hog)
+ingresos$clase_hog <- gsub(5, "Corresidente", ingresos$clase_hog)
+h1<- ggplot(data = ingresos, mapping = aes(x = as.numeric(ing_cor), color = clase_hog)) +
+geom_histogram(binwidth = 1000)
+h2<- ggplot(data = ingresos, mapping = aes(x = as.numeric(ing_cor), color = clase_hog)) +
+geom_freqpoly(binwidth = 1000)
+library("gridExtra")
+grid.arrange(h1, h2, ncol=2)
+```
+```{r}
+grid.arrange(h1, h2, ncol=2)
+```
+
+
+Valores típicos
+Como seguramente has podido inferir de los ejemplos anteriores, los histogramas son muy sensibles a valores atípicos, esto hace que nuestros gráficos se vean sesgados y no podemos apreciar con facilidad los valores centrales, es decir, los valores más comunes de nuestra variable de interés.
+
+
+```{r}
+ggplot(data=enhog)+
+geom_histogram(mapping = aes( x= as.numeric(ingtrab)), binwidth = 1000)
+```
+
+
+
+```{r}
+ggplot(enhog) +
+geom_histogram(mapping = aes(x = as.numeric(ingtrab)), binwidth = 1000) +
+coord_cartesian(xlim = c(0, 150000))
+```
+
+```{r}
+ingresos_trabajo <- enhog %>%
+filter(as.numeric(ingtrab) >0 & as.numeric(ingtrab) < 150000)
+ggplot(ingresos_trabajo) +
+geom_histogram(mapping = aes(x = as.numeric(ingtrab) ), binwidth = 10000)
+```
+Ahora, combinemos esta información con el sexo del jefe del hogar para observar si existen diferencias
+entre hogares con jefatura masculina y femenina. Para ello observemos primero que la
+variable sexo_jefe contiene valores númericos de 1 y 2. Para poder efectuar la separación está variable
+debe ser categorica (es decir que 1 defina no un numero si no una categoría, lo mismo para
+2.) Entonces es necesario transformar esta variable usando gsub() como lo hicimos anteriormente
+
+
+```{r}
+ingresos_trabajo$sexo_jefe<-gsub(1,"Hombre", ingresos_trabajo$sexo_jefe)
+ingresos_trabajo$sexo_jefe<-gsub(2,"Mujer", ingresos_trabajo$sexo_jefe)
+ggplot(data = ingresos_trabajo, mapping = aes(x = as.numeric(ingtrab), color = sexo_jefe))+
+geom_freqpoly(binwidth = 2000)
+```
+
+Veamos un resumen del data frame enhog, en la variable ing_cor.
+
+
+```{r}
+summary(as.numeric(enhog$ing_cor))
+```
+
+```{r}
+enhog <- enhog %>%
+mutate(ing_cor = ifelse(as.numeric(ing_cor)==0 | as.numeric(ing_cor)>200000 , NA, as.numeric(ing_cor)))
+summary(enhog$ing_cor)
+```
+
+```{r}
+ggplot(data = enhog, mapping = aes(x = edad_jefe, y = ing_cor )) +
+geom_point()
+```
+
+```{r}
+ggplot(data = enhog, mapping = aes(x = edad_jefe, y = ing_cor)) +
+geom_point(na.rm = TRUE)
+```
+Co-variación
+La co-variación se refiere al comportamiento entre variables, es decir, la tendencia de los valores de dos variables o más a cambiar. La mejor manera de entender este concepto es visualizar la relación entre dos variables. Estas relaciones dependerán de los tipos de variables que estemos trabajando. En general se identifican tres casos; - Una variable categórica con una continua - Dos variables categóricas - Dos variables continuas.
+
+Categórica con continua
+Antes de continuar, limpiemos un poco nuestro ambiente de trabajo
+
+```{r}
+remove (ingresos, ingresos_trabajo, sexo, tabla_entidad, entidades, edades,
+h1, h2, clases_hogar)
+```
+
+
+
+
+```{r}
+summary(enhog$sexo_jefe)
+```
+
+```{r}
+summary(enhog$clase_hog)
+```
+
+Este resumen nos indica que R está considerando las variables como numéricas y no como categóricas.
+Hagamos lo mismo que hicimos la función gsub, para definir categorías mas que valores numéricos.
+
+
+
+```{r}
+enhog$sexo_jefe<-gsub(1,"Hombre", enhog$sexo_jefe)
+enhog$sexo_jefe<-gsub(2,"Mujer", enhog$sexo_jefe)
+enhog$clase_hog<-gsub(1, "Unipersonal", enhog$clase_hog)
+enhog$clase_hog<-gsub(2, "Nuclear", enhog$clase_hog)
+enhog$clase_hog<-gsub(3, "Ampliado", enhog$clase_hog)
+enhog$clase_hog<-gsub(4, "Compuesto", enhog$clase_hog)
+enhog$clase_hog<-gsub(5, "Corresidente", enhog$clase_hog)
+```
+
+```{r}
+summary(enhog$sexo_jefe)
+  summary(enhog$clase_hog)
+```
+```{r}
+ggplot(data = na.omit(enhog), mapping = aes(x = ing_cor)) +
+geom_freqpoly(mapping = aes(color = clase_hog), binwidth = 1000)
+```
+
+Para visualizar estas diferencias con mayor claridad, elaboremos una gráfica de barras, con proporciones
+
+
+```{r}
+ggplot(data=enhog)+
+geom_bar(mapping = aes(x=clase_hog, y=..prop.., group=1))
+```
+
+Para poder realizar una mejor comparación si realizamos un histograma, pero en lugar de mostrar
+la frecuencia en el eje vertical, mostramos la densidad, la cual indica el frecuencia estandarizada,
+de tal manera que el área bajo cada curva es igual a uno. Esto lo hacemos con la indicación y =
+..density..
+Si realizamos el histograma de esta manera, obtenemos una visualización mejor, por ende, podemos
+describir mejor nuestros datos.
+
+```{r}
+ggplot(data = na.omit(enhog),mapping = aes(x = ing_cor, y = ..density..)) +
+geom_freqpoly(mapping = aes(color = clase_hog), binwidth = 10000)
+```
+
+```{r}
+enhog <- enhog %>%
+mutate(ingreso_per_capita = as.numeric(ing_cor)/as.numeric(tot_integ ))
+ggplot(data = na.omit(enhog), mapping = aes(x = ingreso_per_capita, y = ..density..)) +
+geom_freqpoly(mapping = aes(color = clase_hog), binwidth = 10000)
+```
+
+```{r}
+ggplot(data = na.omit(enhog), mapping = aes(x = clase_hog, y = ingreso_per_capita)) +
+geom_boxplot()
+```
+Recuerda que un diagrama de caja muestra los máximos, mínimos, promedios y demás cuartiles
+de una variable para cada categoría. En este caso, el mayor ingreso máximo se observa en los
+hogares de tipo unipersonal y los hogares con mayor promedio de ingreso son los corresidentes.
+
+```{r}
+summarise ( group_by(na.omit(enhog), clase_hog),
+mean(ingreso_per_capita), max(ingreso_per_capita), min(ingreso_per_capita),.groups = "drop")
+```
+
+
+
+```{r}
+summary(enhog$educa_jefe)
+enhog$educa_jefe[1:9]
+```
+
+```{r}
+enhog <- enhog %>%
+  mutate(educa_jefe =
+    ifelse(educa_jefe=="1", "Sin instrucción" ,
+    ifelse(educa_jefe=="2", "Preescolar" ,
+    ifelse(educa_jefe=="3", "Primaria incompleta" ,
+    ifelse(educa_jefe=="4", "Primaria completa" ,
+    ifelse(educa_jefe=="5", "Secundaria incompleta" ,
+    ifelse(educa_jefe=="6", "Secundaria completa" ,
+    ifelse(educa_jefe=="7", "Preparatoria incompleta" ,
+    ifelse(educa_jefe=="8", "Preparatoria completa" ,
+    ifelse(educa_jefe=="9", "Profesional incompleta" ,
+    ifelse(educa_jefe=="10", "Profesional completa" , "Posgrado"
+    )))))))))))
+```
+
+
+
+Ahora contamos el número de hogares en cada grupo. Una forma sencilla de hacerlo es a través
+de una gráfica de círculos, donde cada circulo representa cuantos hogares existen en cada combinación
+de variables.
+
+```{r}
+ggplot(data = enhog) +
+geom_count(mapping = aes(x = clase_hog, y = educa_jefe))
+```
+```{r}
+enhog %>%
+count(educa_jefe, clase_hog)
+```
+Finalmente, una forma más atractiva de ver el tamaño de los grupos es usando un mapa de calor.
+Este se puede generar con la función de geometría geom_tile() :
+
+
+
+```{r}
+enhog %>%
+count(educa_jefe , clase_hog) %>%
+ggplot(mapping = aes(x = clase_hog , y = educa_jefe)) +
+geom_tile(mapping = aes(fill = n))
+```
+Podemos también analizar los hogares por educación y sexo. Para ello cambiamos la indicación
+del eje x del código anterior.
+
+
+```{r}
+enhog %>%
+count(educa_jefe , sexo_jefe) %>%
+ggplot(mapping = aes(x = sexo_jefe , y = educa_jefe)) +
+geom_tile(mapping = aes(fill = n))
+```
+
+
+Dos variables continuas
+Una de las mejores gráficas para visualizar la relación entre dos variables continuas, es a través
+de una gráfica de dispersión, la cual ya hemos utilizado con anterioridad. En esta gráfica podemos
+observar la asociación entre variables. Consideremos el ejemplo del ingreso per cápita del hogar
+y la edad del jefe del hogar:
+
+
+```{r}
+ggplot(data =na.omit(enhog)) +
+geom_point(mapping = aes(x = edad_jefe, y = ingreso_per_capita))
+```
+```{r}
+ggplot(data = enhog) +
+geom_point(mapping = aes(x = edad_jefe, y = ingreso_per_capita), alpha = 1 / 100)+
+coord_cartesian(ylim = c(0, 100000))
+```
+
+Finalmente, si aún no podemos observar un patrón claro en nuestras variables, podemos agrupar
+una variable continua para observar cambios entre grupos, como si fuera una variable categórica,
+por ejemplo, realicemos un diagrama de caja, pero agrupando a los hogares en grupos de edad de
+5 en 5 años, la instrucción cut_width() nos permite indicar el tamaño de cada grupo:
+
+
+```{r}
+ggplot(data = enhog, mapping = aes(x = edad_jefe, y = ingreso_per_capita)) +
+geom_boxplot(mapping = aes(group = cut_width(edad_jefe, 5)),na.rm =TRUE)+
+coord_cartesian(ylim = c(0, 50000))
+```
+En cambio, si deseamos que cada grupo tenga aproximadamente el mismo número de observaciones,
+podemos utilizar la instrucción cut_number(), para indicar el número de clases o grupos
+que necesitamos y los agrupa de manera automática:
+
+
+
+```{r}
+ggplot(data = na.omit(enhog), mapping = aes(x = edad_jefe, y = ingreso_per_capita)) +
+geom_boxplot(mapping = aes(group = cut_number(edad_jefe, 5)))+
+coord_cartesian(ylim = c(0, 50000))
+```
+

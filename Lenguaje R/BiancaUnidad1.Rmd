@@ -1,0 +1,405 @@
+---
+Para instalar una paquetería, por ejemplo, digamos tidyverse, basta con usar el siguiente comando;
+---
+```{r}
+install.packages("tidyverse")
+```
+
+```{r}
+library(tidyverse)
+```
+
+Para ver la ayuda->
+```{r}
+?count.fields
+```
+
+
+```{r}
+dput(mtcars[1:5,])
+```
+
+```{r}
+datos<-structure(list(mpg = c(21, 21, 22.8, 21.4, 18.7), cyl = c(6, 
+6, 4, 6, 8), disp = c(160, 160, 108, 258, 360), hp = c(110, 110, 
+93, 110, 175), drat = c(3.9, 3.9, 3.85, 3.08, 3.15), wt = c(2.62, 
+2.875, 2.32, 3.215, 3.44), qsec = c(16.46, 17.02, 18.61, 19.44, 
+17.02), vs = c(0, 0, 1, 1, 0), am = c(1, 1, 1, 0, 0), gear = c(4, 
+4, 4, 3, 3), carb = c(4, 4, 1, 1, 2)), row.names = c("Mazda RX4", 
+"Mazda RX4 Wag", "Datsun 710", "Hornet 4 Drive", "Hornet Sportabout"
+), class = "data.frame")
+```
+```{r}
+
+```
+Los nombres importan, R es susceptible a mayúsculas y minúsculas y ortografía, es decir, los errores
+tipográficos son importantes. Debemos ser consistentes en los nombres que se asignen a los objetos.
+
+```{r}
+seq(1,10,by=2)
+```
+
+Para instalar una librería en R se usa el siguiente comando
+
+```{r}
+install.packages("ggplot2")
+install.packages("readxl")
+install.packages("tidyr")
+install.packages("dplyr")
+library(ggplot2)
+library(readxl)
+library(tidyr)
+library(dplyr)
+```
+
+```{r}
+#setwd("~/CURSO PYTHON Y R/CursoIntroR")
+enoe<-read_xlsx("mu_enoe.xlsx")
+```
+Data Frame
+La base de datos que hemos cargado a R y que esta contenida en el objeto enoe se conoce como un data frame. Podemos darnos cuenta de esto si usamos el comando class, el cual nos permite determinar el tipo de objeto en R con el que estamos trabajando.
+
+
+
+```{r}
+class(enoe)
+# es lo mismo que type en python
+```
+
+```{r}
+denunciasddc <- read.csv2("denunciasddc.csv")
+```
+
+```{r}
+poblacion<-read.csv2("poblacion.csv",sep=",")
+```
+```{r}
+population<-read_xlsx("population.xlsx")
+covid19 <- read.csv2("covid19casos.csv",sep=',')
+```
+```{r}
+dim(population)
+colnames(population)
+```
+Uso de ggplot
+Analicemos primero cual es la relación que existe entre los años de educación (variable anios_esc)
+y el ingreso mensual (variable ingreso_mensual). Para ello conviene efectuar un diagrama de dispersión
+o gráfica de puntos. La instrucción para generarla es;
+
+```{r}
+ggplot()
+```
+Este sistema se completa cuando se agrega
+la instrucción geom_point, la cual crea una capa de puntos sobre el sistema de coordenadas.
+
+
+```{r}
+ggplot(data = enoe) +
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual ))
+```
+Esta gráfica parece indicar que hay una relación entre el ingreso mensual y los años de escolaridad. Es
+posible apreciar que entre mas años de educación existan, el valor de la coordenada en y es más alto.
+
+```{r}
+ggplot(data = enoe) +
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual ),color="blue")
+```
+```{r}
+ggplot(data=population)
+geom_point(mappling =aes(x=Year,y=Argentina),na.rm = FALSE)
+```
+Mapeos estéticos
+Podemos profundizar un poco más en la visualización. En México muchas personas tienen un
+empleo con altos niveles de ingreso, aún cuando no tienen altos niveles de escolaridad. Esto es
+posible gracias a la existencia de un sector informal, del cual muchos mexicanos obtienen ingreso
+sin necesidad de tener un determinado nivel educativo. Para analizar cuales de las observaciones
+se trata de trabajadores del sector formal y cuales provienen del sector informal, podemos representar
+la misma gráfica, usando diferentes colores de puntos para cada uno de los sectores.
+
+
+```{r}
+ggplot(data = enoe) + geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual, color=tipo_empleo))
+```
+```{r}
+ggplot(data = enoe) + geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual, color=sex))
+```
+
+```{r}
+ggplot(data = enoe) +
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual, shape=tipo_empleo
+))
+```
+
+
+```{r}
+ggplot(data = enoe) +
+geom_point(mapping = aes(x =anios_esc, y =edad, alpha=ingreso_mensual ))
+```
+
+Al usar alpha podemos analizar la relación entre la edad, educación y el salario . Entre más obscuro
+es el color del punto, se trata de una observación con un mayor valor.
+
+Separando en facetas
+En la sección anterior, pudimos observar una tercera variable dentro de una gráfica bidimensional.
+ggplot2 permite separar variables categóricas dentro de una misma gráfica, lo cual genera
+sub-graficas. Cada una de estas sub-graficas representa un subconjunto de los datos.
+
+
+
+```{r}
+ggplot(data=enoe)+
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual))+
+facet_wrap(~sex, nrow=1, ncol=2)
+```
+Podemos crear un nuevo desagregado de
+información efectuando un cruce entre tipo de empelo y sexo. Para ello hacemos;
+
+```{r}
+ggplot(data=enoe)+
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual))+
+facet_grid(tipo_empleo~sex)
+```
+
+Objetos geométricos
+Anteriormente mencionamos que la instrucción básica para elaborar una gráfica usando ggplot2,
+consideraba ggplot(data = DATA) + GEOM_FUNCTION(mapping = aes(MAPPINGS))
+
+En ggplot2 es posible encontrar una amplia gama de posibilidades,
+pues proporciona mas de 40 geoms, los cuales puedes explorar con mas detalle aqui.
+Para cambiar la geometría (tipo de gráfica), únicamente debemos cambiar el geom_ que acompaña
+a ggplot.
+Veamos los siguientes gráficas y las diferencias entre ellos
+El gráfico de la izquierda corresponde a un gráfico de puntos (dispersión), resultante de usar
+geom_point, mientras que el de la derecha muestra una línea suavizada que ajusta al comportamiento
+de los datos. Los gráficos mostrados resultan de la ejecución del código, donde hemos
+incluido la opción geom_smooth.
+
+
+```{r}
+# Izquierda
+ggplot(data=enoe)+
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual))
+
+```
+
+```{r}
+# Derecha
+ggplot(data=enoe)+
+geom_smooth(mapping = aes(x =anios_esc, y =ingreso_mensual))
+```
+No todos los elementos de estéticas de los que hemos hablado con anterioridad (aesthetics) se pueden
+aplicar a todas las geometrías (geoms). En el caso de geom_smooth también es posible diferenciar entre
+distintas variables categóricas, para ello podemos usar linetype, esto generará un ajuste aproximado
+al comportamiento de los datos, haciendo diferencias entre los grupos que la conforman, por ejemplo;
+
+
+
+```{r}
+ggplot(data=enoe)+
+geom_smooth(mapping = aes(x =anios_esc, y =ingreso_mensual, linetype=sex))
+```
+
+Sobre esta misma gráfica es posible construir la gráfica de puntos o de dispersión que nos permiten
+mostrar cada una de las observaciones. Para ello lo único que debemos hacer es combinar dos
+geometrías en una misma gráfica. Esto, además de mostrar el comportamiento de ajuste en los
+datos, muestra cada una de las observaciones en el color con relación al tipo de empleo.
+
+```{r}
+ggplot(data=enoe)+
+geom_smooth(mapping = aes(x =anios_esc, y =ingreso_mensual,linetype=tipo_empleo))+
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual,color=tipo_empleo))
+```
+Para evitar esa duplicidad,
+podemos incluir de manera genérica dentro de la función ggplot las variables a gráficar y únicamente
+incluir los geoms deseados con sus correspondientes mappings. De manera que la gráfica
+anterior tambien puede ser construida con el siguiente código, el cual puedes ejecutar para comprobar
+que obtenemos el mismo resultado.
+
+```{r}
+ggplot(data=enoe, mapping = aes(x =anios_esc, y =ingreso_mensual))+
+geom_smooth(mapping = aes(linetype=tipo_empleo))+
+geom_point(mapping = aes(color=tipo_empleo))
+```
+Usar varias geometrías en una misma gráfica, también nos da la posibilidad de usar diferentes
+conjuntos de datos para cada una de las capas en la gráfica. Por ejemplo, podríamos desear ver
+una gráfica de puntos que incluya todos los datos y una linea de ajuste a los datos, que represente
+únicamente el caso de Jalisco.
+
+
+```{r}
+ggplot(data=enoe, mapping = aes(x =anios_esc, y =ingreso_mensual))+
+geom_point(mapping = aes(color=niv_edu), show.legend = TRUE)+
+geom_smooth(data=filter(enoe, estado=="Jalisco"), se=FALSE)
+```
+
+Transformaciones estadísticas
+La base de datos de la enoe con la cual estamos trabajando contiene mas de 8,000 observaciones.
+Una forma fácil de ver cuantas de esas observaciones corresponden a hombre y cuales, a mujeres,
+es con una gráfica de barras.
+
+
+
+```{r}
+ggplot(data=enoe)+
+geom_bar(mapping = aes(x=sex))
+```
+Cada geometría realiza una transformación estadística específica y cargada de manera predeterminada,
+en el caso de geom_bar se efectúa un conteo, el cual también puede ser ejecutado con
+la indicación stat_count. Generalmente las geoms y las stas son intercambiables. Por ejemplo, la
+gráfica de barras anterior puede ser creada usando la indicación
+```{r}
+ggplot(data=enoe)+
+stat_count(mapping = aes(x=sex))
+```
+También es posible expresar la cantidad de observaciones por categoría como una proporción.
+Para ello tendríamos que indicar lo siguiente;
+
+```{r}
+ggplot(data=enoe)+
+geom_bar(mapping = aes(x=sex, y=..prop.., group=1))
+```
+Esto gracias a que hemos indicado que
+en el eje y deseamos observar la proporción y=..prop...
+
+Regresando a nuestra base de ejemplo enoe, supongamos que deseamos representar el promedio
+del ingreso de cada grupo, así como los ingresos máximos y mínimos para cada grupo. En este
+caso podemos usar la transformación estadística stat_summary, la cual muestra un resumen de
+los estadísticos principales de una variable. Para ello, tendríamos que indicar **
+
+
+```{r}
+ggplot(data=enoe)+
+stat_summary(
+mapping = aes(x=sex, y=ingreso_mensual),
+fun.min=min,
+fun.max=max,
+fun=median
+)
+```
+La indicación fun=median indica una transformación en la que es necesario calcular el promedio
+de la variable y=ingreso_mensual sobre cada una de las categorías.La gráfica nos permite observar
+que los ingresos mínimos y máximos entre hombres y mujeres son iguales, con una ligera
+diferencia en la mediana.
+
+
+Ajustes de posición
+position=“stack”
+Con ggplot2 es posible asociar un color a cada una de las diferentes categorías en las barras, para
+ello usamos la estética fill.
+
+```{r}
+ggplot(data=enoe)+
+geom_bar(mapping = aes(x=sex, fill=sex))
+```
+
+```{r}
+ggplot(data=enoe)+
+geom_bar(mapping = aes(x=sex, fill=niv_edu))
+```
+
+```{r}
+ggplot(data=enoe)+ 
+geom_bar(mapping = aes(x=sex, fill=niv_edu), position = "stack")
+```
+
+```{r}
+ggplot(data=enoe, mapping = aes(x=factor(1), fill=niv_edu))+
+geom_bar( position = "fill")
+```
+
+
+
+
+
+
+
+```{r}
+p<-ggplot(data=covid19)+
+geom_bar(mapping = aes(x=provincia_residencia))
+p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+position=“dodge”
+Finalmente position="dodge" no apila, ni traslapa las barras, mas bien las agrupa una al lado de
+la otra.
+
+```{r}
+ggplot(data=enoe, mapping = aes(x=sex, fill=niv_edu))+
+geom_bar( position = "dodge")+
+labs(title="Observaciones por sexo y nivel educativo", x="Sexo", y="-
+Observaciones")
+```
+
+position=“jitter”
+Para entender el funcionamiento de position="jitter", observemos las siguientes dos gráficas;
+
+```{r}
+ggplot(data = enoe) +
+geom_point(mapping = aes(x =anios_esc, y =ingreso_mensual ))
+```
+
+
+```{r}
+#Derecha
+ggplot(data = enoe) +
+geom_point(mapping = aes(x=anios_esc, y =ingreso_mensual ), position ="jitter")
+```
+
+
+coord_flip()
+coord_flip() nos permite hacer un cambio en las coordenadas x, y de la gráfica de manera que la
+información del eje x, se transforma en la información del eje y, y viceversa.
+
+
+```{r}
+# superior
+ggplot(data=enoe, mapping = aes(x=niv_edu, y=ingreso_mensual))+
+geom_boxplot()
+
+```
+
+```{r}
+# inferior
+ggplot(data=enoe, mapping = aes(x=niv_edu, y=ingreso_mensual))+
+  geom_boxplot()+
+coord_flip()
+```
+
+coord_polar()
+coord_polar() permite el uso de coordenadas polares. Consideremos el siguiente código que genera
+las gráficas;
+
+
+```{r}
+barra<-ggplot(data=enoe)+
+geom_bar(mapping = aes(x=niv_edu, fill=niv_edu),
+show.legend = FALSE, width = 1)+
+theme(aspect.ratio = 1)+
+labs(x=NULL, y=NULL)
+barra+coord_flip()
+barra+coord_polar()
+```
+
+
+En este caso, las gráficas circulares con ggplot2, parten de la construcción de una gráficas de barras
+apiladas, únicamente con un cambio de coordenadas.
+
+```{r}
+ggplot(data=enoe, mapping = aes(x=factor(1), fill=niv_edu))+
+geom_bar(position = "fill")+
+coord_polar(theta = "y") +
+labs(x="", y="")
+```
+
+La gramática de ggplot2
+Iniciamos este capitulo con una construcción básica para graficar con ggplot2, que incluía únicamente
+tres elementos. Hasta ahora hemos añadido cuatro elementos mas que permiten mejor visualización
+de los datos ggplot2. Esto totaliza siete parámetros, cuya estructura general responde
+a lo siguiente
+• ggplot(data = DATOS) + GEOM_FUNCIÓN( mapping = aes(MAPEOS), stat = ESTADÍSTICAS, position
+= POSICIÓN ) + FUNCIÓN_COORDENADAS + FUNCIÓN_FACETAS
+
+Estos parámetros componen la gramática de un gráfica con ggplot2. En consecuencia, una gráfica
+se puede describir como una combinación de un conjunto de datos, una geometría, un conjunto
+de mapeos, una transformación estadística, una posición, un sistema de coordenadas y un esquema
+de facetas. Esta plantilla puede ser utilizada para crear una amplia variedad de gráficas.
+
